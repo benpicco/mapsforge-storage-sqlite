@@ -10,22 +10,27 @@ import org.mapsforge.storage.tile.TilePersistenceManager;
 
 
 public class Test {
-	
+		
 	private static void generateTestFile(String file, int sizeX, int sizeY) {
 		TilePersistenceManager tpm = new PCTilePersistenceManager(file);
 		LinkedList<TileDataContainer> tdcll = new LinkedList<TileDataContainer>();
-		
 		Random generator = new Random(1337);
+
+		final byte[] baseZoomLevel = tpm.getMetaData().getBaseZoomLevel();
+		for (int zoomInterval = 0; zoomInterval < baseZoomLevel.length; ++zoomInterval) {
+			System.out.println("zoomLevel["+zoomInterval+"]: " + baseZoomLevel[zoomInterval]);
+			double div = zoomInterval > 0 ? Math.pow(2, baseZoomLevel[zoomInterval] - baseZoomLevel[zoomInterval - 1]) : 1;
 		
-		for (int x = 0; x < sizeX; ++x) {
-			for (int y = 0; y < sizeY; ++y) {
-				byte[] data = new byte[1024];
-				generator.nextBytes(data);
-				tdcll.add(new TileDataContainer(data, TileDataContainer.TILE_TYPE_VECTOR, x, y, (byte) 0));
+			for (int x = 0; x < sizeX/div; ++x) {
+				for (int y = 0; y < sizeY/div; ++y) {
+					byte[] data = new byte[1024];
+					generator.nextBytes(data);
+					tdcll.add(new TileDataContainer(data, TileDataContainer.TILE_TYPE_VECTOR, x, y, (byte) zoomInterval));
+				}
 			}
+			tpm.insertOrUpdateTiles(tdcll);
+			tdcll.clear();
 		}
-		
-		tpm.insertOrUpdateTiles(tdcll);
 		
 		tpm.close();
 	}
@@ -34,7 +39,7 @@ public class Test {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		generateTestFile("/tmp/test.map", 64, 64);
+		generateTestFile("/tmp/test.map", 128, 128);
 	}
 
 }
