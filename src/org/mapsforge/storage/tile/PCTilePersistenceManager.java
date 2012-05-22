@@ -713,7 +713,7 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 	 */
 	public static void main(String[] args) {
 		PCTilePersistenceManager tpm = new PCTilePersistenceManager(
-				"/home/moep/maps/mapsforge/test.map");
+				"/tmp/PCTilePersistenceManager_test.map");
 		tpm.init();
 
 		Vector<TileDataContainer> tiles = new Vector<TileDataContainer>();
