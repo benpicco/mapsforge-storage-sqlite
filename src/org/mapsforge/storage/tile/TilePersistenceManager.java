@@ -149,6 +149,10 @@ public interface TilePersistenceManager {
 	 * @return An collection of all tiles found.
 	 */
 	public Collection<TileDataContainer> getTileData(final int[] ids, final byte baseZoomInterval);
+	
+	public int getTileHash(int xPos, int yPos, byte baseZoomInterval);
+	
+	public int getTileHash(int id, byte baseZoomInterval);
 
 	/**
 	 * Retrieves the map files metadata such as file version, bounding box, zoom interval configuration

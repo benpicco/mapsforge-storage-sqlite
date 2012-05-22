@@ -127,7 +127,7 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 
 	}
 
-	private void initializePrivateStatements() throws SQLException {
+	private void initializePrivateStatements() throws SQLException {		
 		this.getMetaDataStatement = this.conn
 				.prepareStatement("SELECT value FROM metadata WHERE key == ?;");
 		this.conn
@@ -161,12 +161,15 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 			}
 		}
 
+		System.out.println("ZoomIntervals: " + this.mapFileMetaData
+				.getAmountOfZoomIntervals());
+		
 		// Get tile by ID statements
 		this.getTileByIDStmt = new PreparedStatement[this.mapFileMetaData
 				.getAmountOfZoomIntervals()];
 		for (int i = 0; i < this.mapFileMetaData.getAmountOfZoomIntervals(); i++) {
 			try {
-				this.conn.prepareStatement("SELECT data FROM tiles_" + i
+				this.getTileByIDStmt[i] = this.conn.prepareStatement("SELECT data, hash FROM tiles_" + i
 						+ " WHERE id == ?;");
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
@@ -313,6 +316,33 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 			e.printStackTrace();
 		}
 
+	}
+	
+	@Override
+	public int getTileHash(int xPos, int yPos, byte baseZoomInterval) {
+		return getTileHash(coordinatesToID(xPos, yPos, baseZoomInterval),
+				baseZoomInterval);
+	}
+	
+	@Override
+	public int getTileHash(int id, byte baseZoomInterval) {
+		int result = 0;
+
+		try {
+			if (this.getTileByIDStmt[baseZoomInterval] == null)
+				System.err.println("This should not happen. " + baseZoomInterval);
+			this.getTileByIDStmt[baseZoomInterval].setInt(1, id);
+			this.resultSet = this.getTileByIDStmt[baseZoomInterval]
+					.executeQuery();
+
+			if (this.resultSet.next()) {
+				result = this.resultSet.getInt(2);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return result;
 	}
 
 	@Override
