@@ -21,6 +21,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Vector;
 
@@ -152,7 +153,7 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 			try {
 				this.insertOrUpdateTileByIDStmt[i] = this.conn
 						.prepareStatement("INSERT OR REPLACE INTO tiles_" + i
-								+ " VALUES (?,?);");
+								+ " VALUES (?,?,?);");
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -179,7 +180,7 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 		// CREATE TABLES
 		for (int i = 0; i < this.mapFileMetaData.getAmountOfZoomIntervals(); i++) {
 			this.stmt.executeUpdate("CREATE TABLE IF NOT EXISTS tiles_" + i
-					+ " (id INTEGER, data BLOB, PRIMARY KEY (id));");
+					+ " (id INTEGER, data BLOB, hash INTEGER, PRIMARY KEY (id));");
 		}
 
 		// Metadata (mostly information from former file header)
@@ -242,7 +243,7 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 			this.insertOrUpdateTileByIDStmt[baseZoomInterval].setInt(1, id);
 			this.insertOrUpdateTileByIDStmt[baseZoomInterval].setBytes(2,
 					rawData);
-
+			this.insertOrUpdateTileByIDStmt[baseZoomInterval].setInt(3, Arrays.hashCode(rawData));
 			this.insertOrUpdateTileByIDStmt[baseZoomInterval].execute();
 			this.conn.commit();
 		} catch (SQLException e) {
@@ -264,6 +265,7 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 								tile.getBaseZoomLevel()));
 				this.insertOrUpdateTileByIDStmt[baseZoomLevel].setBytes(2,
 						tile.getData());
+				this.insertOrUpdateTileByIDStmt[baseZoomLevel].setInt(3, Arrays.hashCode(tile.getData()));
 				this.insertOrUpdateTileByIDStmt[baseZoomLevel].addBatch();
 			}
 
