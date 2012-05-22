@@ -16,10 +16,10 @@ public class Test {
 		LinkedList<TileDataContainer> tdcll = new LinkedList<TileDataContainer>();
 		
 		Random generator = new Random(1337);
-		byte[] data = new byte[1024];
 		
 		for (int x = 0; x < sizeX; ++x) {
 			for (int y = 0; y < sizeY; ++y) {
+				byte[] data = new byte[1024];
 				generator.nextBytes(data);
 				tdcll.add(new TileDataContainer(data, TileDataContainer.TILE_TYPE_VECTOR, x, y, (byte) 0));
 			}
