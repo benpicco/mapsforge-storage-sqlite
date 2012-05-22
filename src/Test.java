@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Random;
 
@@ -19,8 +20,12 @@ public class Test {
 		
 		return depth;
 	}
+	
+	private static int save_array(int[][] array, int x, int y) {
+		return x >= array.length || y >= array[x].length ? 0 : array[x][y];
+	}
 		
-	private static void generateHashTree(String file, int sizeX, int sizeY, int factor) {
+	private static int[][][] generateHashTree(String file, int sizeX, int sizeY, int factor) {
 		TilePersistenceManager tpm = new PCTilePersistenceManager(file);
 		
 		int[][][] hashes = new int[maxDepth(sizeX, sizeY, factor)][][];
@@ -43,15 +48,16 @@ public class Test {
 					int hash = 0;
 					for (int n = 0; n < factor; ++n)
 						for (int m = 0; m < factor; ++m)
-							hash += hashes[i-1][x * factor + n][y * factor + m];
+							hash += save_array(hashes[i-1], x * factor + n, y * factor + m);
 					hashes[i][x][y] = hash;
 				}
 			}		
 		}
-			
+		
+		return hashes;
 	}
 		
-	private static void generateTestFile(String file, int sizeX, int sizeY) {
+	private static void generateTestFile(String file, int sizeX, int sizeY, boolean changeTile) {
 		TilePersistenceManager tpm = new PCTilePersistenceManager(file);
 		LinkedList<TileDataContainer> tdcll = new LinkedList<TileDataContainer>();
 		Random generator = new Random(1337);
@@ -65,6 +71,8 @@ public class Test {
 				for (int y = 0; y < sizeY/div; ++y) {
 					byte[] data = new byte[1024];
 					generator.nextBytes(data);
+					if(changeTile && x == 23 && y == 23)
+						data = "This tile has changed!".getBytes();
 					tdcll.add(new TileDataContainer(data, TileDataContainer.TILE_TYPE_VECTOR, x, y, (byte) zoomInterval));
 				}
 			}
@@ -81,9 +89,17 @@ public class Test {
 	public static void main(String[] args) {
 		final String file = "/tmp/test.map";
 		
-		// generateTestFile(file, 128, 128);
+//		generateTestFile(file, 128, 128, false);
+//		generateTestFile(file + ".changed", 128, 128, true);
 		
-		generateHashTree(file, 128, 128, 2);
+		int[][][] hashes = generateHashTree(file, 128, 128, 3);
+		int[][][] hashes_mod = generateHashTree(file + ".changed", 128, 128, 3);
+		
+		System.out.println((hashes.length - 1) + ": " + hashes[hashes.length-1][0][0]);
+		System.out.println((hashes_mod.length - 1) + ": " + hashes_mod[hashes_mod.length-1][0][0]);
+		
+		System.out.println(hashes[0][23][23] + " - " + hashes_mod[0][23][23]);
+
 	}
 
 }
