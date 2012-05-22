@@ -45,7 +45,6 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 	private PreparedStatement deleteTileByIDStmt[] = null;
 	private PreparedStatement getTileByIDStmt[] = null;
 	private PreparedStatement getMetaDataStatement = null;
-	private PreparedStatement insertOrUpdateMetaDataStatement = null;
 	private ResultSet resultSet = null;
 
 	private MapFileMetaData mapFileMetaData = null;
@@ -73,6 +72,8 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 		} else {
 			this.mapFileMetaData = mfm;
 		}
+		
+		init();
 	}
 
 	/**
@@ -90,7 +91,7 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 	/**
 	 * Opens and creates the database and creates metadata tables.
 	 */
-	public void init() {
+	private void init() {
 		System.out.println("Database has been initialized");
 		// TODO Can this wrapper be merged with openOrCreateDB()?
 		try {
@@ -129,7 +130,7 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 	private void initializePrivateStatements() throws SQLException {
 		this.getMetaDataStatement = this.conn
 				.prepareStatement("SELECT value FROM metadata WHERE key == ?;");
-		this.insertOrUpdateMetaDataStatement = this.conn
+		this.conn
 				.prepareStatement("INSERT OR REPLACE INTO metadata VALUES(?, ?)");
 
 		// Delete tile by ID statements
@@ -687,6 +688,7 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 
 	@Override
 	public void close() {
+		System.out.println("closing database");
 		try {
 			if (!this.conn.isClosed()) {
 				this.conn.commit();
@@ -714,7 +716,6 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 	public static void main(String[] args) {
 		PCTilePersistenceManager tpm = new PCTilePersistenceManager(
 				"/tmp/PCTilePersistenceManager_test.map");
-		tpm.init();
 
 		Vector<TileDataContainer> tiles = new Vector<TileDataContainer>();
 		tiles.add(new TileDataContainer("moep".getBytes(),
