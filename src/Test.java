@@ -102,8 +102,12 @@ public class Test {
 					generator.nextBytes(data);
 					
 					// DEBUG
-					if(changeTile && x == 23 && y == 23)
+					if (changeTile && x == 23 && y == 23)
 						data = "This tile has changed!".getBytes();
+					if (changeTile && x == 23 && y == 24)
+						data = "This tile has changed as well!".getBytes();
+					if (changeTile && x == 100 && y == 48)
+						data = "You did find me!".getBytes();
 					
 					tdcll.add(new TileDataContainer(data, TileDataContainer.TILE_TYPE_VECTOR, x, y, zoomInterval));
 				}
