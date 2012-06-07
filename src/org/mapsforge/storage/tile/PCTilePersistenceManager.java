@@ -25,7 +25,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Vector;
 
+import org.mapsforge.core.util.MercatorProjection;
 import org.mapsforge.map.writer.model.Rect;
+import org.mapsforge.map.writer.model.TileInfo;
 import org.mapsforge.storage.dataExtraction.MapFileMetaData;
 
 /**
@@ -208,7 +210,7 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 					.executeUpdate("INSERT INTO zoom_interval_configuration VALUES ('"
 							+ i
 							+ "','"
-							+ this.mapFileMetaData.getBaseZoomLevel()[i]
+							+ this.mapFileMetaData.getBaseZoomLevels()[i]
 							+ "','"
 							+ this.mapFileMetaData.getMinimalZoomLevel()[i]
 							+ "','"
@@ -233,6 +235,18 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 		}
 
 	}
+	
+	private void updateBoundingBoxMetaData(long tileX, long tileY, int zoomLevel) {
+		final double newLon = MercatorProjection.tileXToLongitude(tileX, (byte) zoomLevel) * 1000000;
+		final double newLat = MercatorProjection.tileYToLatitude(tileY, (byte) zoomLevel) * 1000000;
+
+		final int minLon = (int) Math.floor(this.mapFileMetaData.getMinLon() > newLon ? newLon : this.mapFileMetaData.getMinLon());
+		final int maxLon = (int) Math.ceil(this.mapFileMetaData.getMaxLon() < newLon ? newLon : this.mapFileMetaData.getMaxLon());
+		final int minLat = (int) Math.floor(this.mapFileMetaData.getMinLat() > newLat ? newLat : this.mapFileMetaData.getMinLat());
+		final int maxLat = (int) Math.ceil(this.mapFileMetaData.getMaxLat() < newLat ? newLat : this.mapFileMetaData.getMaxLat());
+				
+		mapFileMetaData.setBoundingBox(minLat, minLon, maxLat, maxLon);
+	}
 
 	@Override
 	public void insertOrUpdateTile(byte[] rawData, int xPos, int yPos,
@@ -248,6 +262,9 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 			this.insertOrUpdateTileByIDStmt[baseZoomInterval].setBytes(2,
 					rawData);
 			this.insertOrUpdateTileByIDStmt[baseZoomInterval].setInt(3, Arrays.hashCode(rawData));
+			
+			updateBoundingBoxMetaData(getXCoordinateFromId(id), getYCoordinateFromId(id), this.mapFileMetaData.getBaseZoomLevels()[baseZoomInterval]);
+			
 			this.insertOrUpdateTileByIDStmt[baseZoomInterval].execute();
 			this.conn.commit();
 		} catch (SQLException e) {
@@ -265,12 +282,14 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 			for (TileDataContainer tile : rawData) {
 				this.insertOrUpdateTileByIDStmt[baseZoomLevel].setInt(
 						1,
-						coordinatesToID(tile.getxPos(), tile.getyPos(),
-								tile.getBaseZoomLevel()));
+						coordinatesToID(tile.getxPos(), tile.getyPos(), baseZoomLevel));
 				this.insertOrUpdateTileByIDStmt[baseZoomLevel].setBytes(2,
 						tile.getData());
 				this.insertOrUpdateTileByIDStmt[baseZoomLevel].setInt(3, Arrays.hashCode(tile.getData()));
 				this.insertOrUpdateTileByIDStmt[baseZoomLevel].addBatch();
+				
+				updateBoundingBoxMetaData(tile.getxPos(), tile.getyPos(), this.mapFileMetaData.getBaseZoomLevels()[baseZoomLevel]);
+				
 			}
 
 			this.insertOrUpdateTileByIDStmt[baseZoomLevel].executeBatch();
@@ -284,6 +303,8 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 	public void deleteTile(int xPos, int yPos, byte baseZoomInterval) {
 		deleteTile(coordinatesToID(xPos, yPos, baseZoomInterval),
 				baseZoomInterval);
+		
+		// TODO: Update BoundingBox
 	}
 
 	@Override
@@ -298,7 +319,8 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-
+		
+		// TODO: Update BoundingBox
 	}
 
 	@Override
@@ -315,7 +337,8 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-
+		
+		// TODO: Update BoundingBox
 	}
 	
 	@Override
@@ -718,6 +741,8 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 
 	@Override
 	public void close() {
+		writeMetaDataToDB();
+		
 		System.out.println("closing database");
 		try {
 			if (!this.conn.isClosed()) {
@@ -731,7 +756,21 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 	}
 
 	private int coordinatesToID(int xPos, int yPos, int baseZoomInterval) {
-		return (int) (yPos * Math.pow(2, this.mapFileMetaData.getBaseZoomLevel()[baseZoomInterval]) + xPos);
+		return (int) (yPos * Math.pow(2, this.mapFileMetaData.getBaseZoomLevels()[baseZoomInterval]) + xPos);
+	}
+	
+	private int getXCoordinateFromId(int id) {
+		// TODO
+		System.err.println("Error: getXCoordinateFromId not implemented yet");
+		
+		return -1;
+	}
+	
+	private int getYCoordinateFromId(int id) {
+		// TODO
+		System.err.println("Error: getYCoordinateFromId not implemented yet");
+		
+		return -1;
 	}
 
 	/**

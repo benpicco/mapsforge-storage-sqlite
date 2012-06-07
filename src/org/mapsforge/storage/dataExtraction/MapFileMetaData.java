@@ -318,7 +318,7 @@ public class MapFileMetaData {
 		this.tileType[zoomInterval] = tileType;
 	}
 
-	public byte[] getBaseZoomLevel() {
+	public byte[] getBaseZoomLevels() {
 		return this.baseZoomLevel;
 	}
 
