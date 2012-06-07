@@ -1,3 +1,4 @@
+import java.util.List;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.Random;
@@ -7,7 +8,6 @@ import org.mapsforge.map.writer.model.GeoCoordinate;
 import org.mapsforge.storage.tile.PCTilePersistenceManager;
 import org.mapsforge.storage.tile.TileDataContainer;
 import org.mapsforge.storage.tile.TilePersistenceManager;
-
 
 public class Test {
 		
@@ -24,7 +24,7 @@ public class Test {
 		return x >= array.length || y >= array[x].length ? 0 : array[x][y];
 	}
 		
-	private static int[][][] generateHashTree(String file, int factor) {
+	private static HashedTPM generateHashTree(String file, int factor) {
 		TilePersistenceManager tpm = new PCTilePersistenceManager(file);
 		
 		final byte bzi  = (byte) (tpm.getMetaData().getBaseZoomLevels().length - 1);
@@ -49,8 +49,6 @@ public class Test {
 			for (int y = 0; y < sizeY; ++y)
 				hashes[hashes.length - 1][x][y] = tpm.getTileHash(x, y, bzi);
 		
-		tpm.close();
-		
 		for (int i = hashes.length - 2; i >= 0; --i) {
 			int maxX = (int) Math.ceil((double) hashes[i+1].length/factor);
 			int maxY = (int) Math.ceil((double) hashes[i+1][0].length/factor);
@@ -65,14 +63,27 @@ public class Test {
 							hash += save_array(hashes[i+1], x * factor + n, y * factor + m);
 					hashes[i][x][y] = hash;
 				}
-			}		
+			}
 		}
-		
-		return hashes;
+
+		return new HashedTPM(tpm, hashes);
 	}
 	
-	public static void findModifiedTiles(int[][][] a, int[][][] b, int x, int y, int z, int factor) {
+	public static List<Position> findModifiedTiles(int[][][] a, int[][][] b, int startX, int startY, int z, int factor) {
+		if (a.length != b.length)
+			return null;
 		
+		List<Position> modified = new LinkedList<Position>();
+		
+		if(z >= a.length)
+			modified.add(new Position(startX / factor, startY / factor));
+		else
+			for (int x = startX; x < startX + factor && x < a[z].length; ++x)
+				for (int y = startY; y < startY + factor && y < a[z][x].length; ++y)
+					if (a[z][x][y] != b[z][x][y])
+						modified.addAll(findModifiedTiles(a, b, x * factor, y * factor, z+1, factor));
+		
+		return modified;
 	}
 		
 	private static void generateTestFile(String file, int sizeX, int sizeY, boolean changeTile) {
@@ -127,13 +138,42 @@ public class Test {
 		if(!new File(file + ".changed").exists())
 			generateTestFile(file + ".changed", 128, 128, true);
 
-		int[][][] hashes = generateHashTree(file, 3);
-		int[][][] hashes_mod = generateHashTree(file + ".changed", 3);
+		HashedTPM a = generateHashTree(file, 3);
+		HashedTPM b = generateHashTree(file + ".changed", 3);
 		
-		System.out.println("0: " + hashes[0][0][0]);
-		System.out.println("0: " + hashes_mod[0][0][0]);
+		System.out.println("0: " + a.hashes[0][0][0]);
+		System.out.println("0: " + b.hashes[0][0][0]);
 		
-		System.out.println(hashes[hashes.length-1][23][23] + " - " + hashes_mod[hashes_mod.length-1][23][23]);
+		List<Position> modified = findModifiedTiles(a.hashes, b.hashes, 0, 0, 0, 3);
+		for (Position p : modified) {
+			System.out.println("Modified: " + p);
+			System.out.println(new String(b.tpm.getTileData(p.tileX, p.tileY, (byte) (b.tpm.getMetaData().getAmountOfZoomIntervals() - 1))));
+		}
+		
+		System.out.println("Done.");
+	}
+}
+
+class HashedTPM {
+	public TilePersistenceManager tpm;
+	public int[][][] hashes;
 	
+	public HashedTPM(TilePersistenceManager tpm, int[][][] hashes) {
+		this.tpm = tpm;
+		this.hashes = hashes;
+	}
+}
+
+class Position {
+	public final int tileX, tileY;
+	
+	public Position(int x, int y) {
+		this.tileX = x;
+		this.tileY = y;
+	}
+	
+	@Override
+	public String toString() {
+		return "(" + tileX + ", " + tileY + ")";
 	}
 }
