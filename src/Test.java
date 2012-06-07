@@ -76,7 +76,7 @@ public class Test {
 		for (byte zoomInterval = 0; zoomInterval < baseZoomLevel.length; ++zoomInterval) {
 			System.out.println("zoomLevel["+zoomInterval+"]: " + baseZoomLevel[zoomInterval]);
 			double div = zoomInterval < baseZoomLevel.length - 1 ? Math.pow(2, baseZoomLevel[zoomInterval + 1] - baseZoomLevel[zoomInterval]) : 1;
-		
+			
 			for (int x = 0; x < sizeX/div; ++x) {
 				for (int y = 0; y < sizeY/div; ++y) {
 					byte[] data = new byte[1024];
@@ -87,25 +87,22 @@ public class Test {
 						data = "This tile has changed!".getBytes();
 					
 					tdcll.add(new TileDataContainer(data, TileDataContainer.TILE_TYPE_VECTOR, x, y, zoomInterval));
-					
-//					if (zoomInterval > 0)
-//						System.out.println(x+", " + y+", " + baseZoomLevel[zoomInterval]);
 				}
 			}
-			System.out.println("-------");
 			
 			tpm.insertOrUpdateTiles(tdcll);
+			System.out.println("Written "+tdcll.size()+" tiles.");
 			tdcll.clear();
 		}
 
 		System.out.println("Map Dimensions: ("+
-				MercatorProjection.longitudeToTileX(tpm.getMetaData().getMinLon() / E6, baseZoomLevel[0])
+				MercatorProjection.longitudeToTileX(tpm.getMetaData().getMinLon() / E6, baseZoomLevel[1])
 				+ " - " +
-				MercatorProjection.longitudeToTileX(tpm.getMetaData().getMaxLon() / E6, baseZoomLevel[0])
+				MercatorProjection.longitudeToTileX(tpm.getMetaData().getMaxLon() / E6, baseZoomLevel[1])
 				+ ") x (" +
-				MercatorProjection.latitudeToTileY(tpm.getMetaData().getMinLat() / E6, baseZoomLevel[0])
+				MercatorProjection.latitudeToTileY(tpm.getMetaData().getMaxLat() / E6, baseZoomLevel[1])
 				+" - "+
-				MercatorProjection.latitudeToTileY(tpm.getMetaData().getMaxLat() / E6, baseZoomLevel[0])
+				MercatorProjection.latitudeToTileY(tpm.getMetaData().getMinLat() / E6, baseZoomLevel[1])
 				+")");
 		
 		tpm.close();
@@ -118,11 +115,6 @@ public class Test {
 		final String file = "/tmp/test.map";
 		
 		generateTestFile(file, 128, 128, false);
-		
-		System.out.println(MercatorProjection.tileYToLatitude(128, (byte) 8));
-		System.out.println(MercatorProjection.tileXToLongitude(128, (byte) 8));
-
-		System.out.println(MercatorProjection.latitudeToTileY(90, (byte) 8));
 
 		/*
 		generateTestFile(file + ".changed", 128, 128, true);

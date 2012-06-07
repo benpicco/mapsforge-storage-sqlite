@@ -71,9 +71,11 @@ public class MapFileMetaData {
 		MapFileMetaData ret = new MapFileMetaData();
 		ret.setFileVersion("0.4-experimental");
 		ret.setDateOfCreation(System.currentTimeMillis());
-		ret.setBoundingBox(-90 * (int) GeoCoordinate.FACTOR_DOUBLE_TO_INT, -180
-				* (int) GeoCoordinate.FACTOR_DOUBLE_TO_INT, 90 * (int) GeoCoordinate.FACTOR_DOUBLE_TO_INT,
-				180 * (int) GeoCoordinate.FACTOR_DOUBLE_TO_INT);
+		ret.setBoundingBox(90 * (int) GeoCoordinate.FACTOR_DOUBLE_TO_INT, 180
+				                               * (int) GeoCoordinate.FACTOR_DOUBLE_TO_INT, -90 * (int) GeoCoordinate.FACTOR_DOUBLE_TO_INT,
+				                               -180 * (int) GeoCoordinate.FACTOR_DOUBLE_TO_INT);
+
+		
 		ret.setTileSize(256);
 		ret.setProjection("Mercator");
 		ret.setComment("Default metadata");

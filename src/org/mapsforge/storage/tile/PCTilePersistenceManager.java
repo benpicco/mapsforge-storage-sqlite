@@ -25,7 +25,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Vector;
 
+import org.mapsforge.core.model.GeoPoint;
 import org.mapsforge.core.util.MercatorProjection;
+import org.mapsforge.map.writer.model.GeoCoordinate;
 import org.mapsforge.map.writer.model.Rect;
 import org.mapsforge.map.writer.model.TileInfo;
 import org.mapsforge.storage.dataExtraction.MapFileMetaData;
@@ -236,9 +238,9 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 
 	}
 	
-	private void updateBoundingBoxMetaData(long tileX, long tileY, int zoomLevel) {
-		final double newLon = MercatorProjection.tileXToLongitude(tileX, (byte) zoomLevel) * 1000000;
-		final double newLat = MercatorProjection.tileYToLatitude(tileY, (byte) zoomLevel) * 1000000;
+	private void updateBoundingBoxMetaData(long tileX, long tileY, int zoomLevel) {		
+		final double newLon = MercatorProjection.tileXToLongitude(tileX, (byte) zoomLevel) * GeoCoordinate.FACTOR_DOUBLE_TO_INT;
+		final double newLat = MercatorProjection.tileYToLatitude(tileY, (byte) zoomLevel) * GeoCoordinate.FACTOR_DOUBLE_TO_INT;
 
 		final int minLon = (int) Math.floor(this.mapFileMetaData.getMinLon() > newLon ? newLon : this.mapFileMetaData.getMinLon());
 		final int maxLon = (int) Math.ceil(this.mapFileMetaData.getMaxLon() < newLon ? newLon : this.mapFileMetaData.getMaxLon());
@@ -263,7 +265,7 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 					rawData);
 			this.insertOrUpdateTileByIDStmt[baseZoomInterval].setInt(3, Arrays.hashCode(rawData));
 			
-			updateBoundingBoxMetaData(getXCoordinateFromId(id), getYCoordinateFromId(id), this.mapFileMetaData.getBaseZoomLevels()[baseZoomInterval]);
+			updateBoundingBoxMetaData(getXCoordinateFromId(id, baseZoomInterval), getYCoordinateFromId(id, baseZoomInterval), this.mapFileMetaData.getBaseZoomLevels()[baseZoomInterval]);
 			
 			this.insertOrUpdateTileByIDStmt[baseZoomInterval].execute();
 			this.conn.commit();
@@ -288,8 +290,7 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 				this.insertOrUpdateTileByIDStmt[baseZoomLevel].setInt(3, Arrays.hashCode(tile.getData()));
 				this.insertOrUpdateTileByIDStmt[baseZoomLevel].addBatch();
 				
-				updateBoundingBoxMetaData(tile.getxPos(), tile.getyPos(), this.mapFileMetaData.getBaseZoomLevels()[baseZoomLevel]);
-				
+				updateBoundingBoxMetaData(tile.getxPos(), tile.getyPos(), this.mapFileMetaData.getBaseZoomLevels()[baseZoomLevel]);				
 			}
 
 			this.insertOrUpdateTileByIDStmt[baseZoomLevel].executeBatch();
@@ -759,18 +760,13 @@ public class PCTilePersistenceManager implements TilePersistenceManager {
 		return (int) (yPos * Math.pow(2, this.mapFileMetaData.getBaseZoomLevels()[baseZoomInterval]) + xPos);
 	}
 	
-	private int getXCoordinateFromId(int id) {
-		// TODO
-		System.err.println("Error: getXCoordinateFromId not implemented yet");
-		
-		return -1;
+	private int getXCoordinateFromId(int id, byte baseZoomInterval) {		
+		return (int) (id % Math.pow(2, this.mapFileMetaData.getBaseZoomLevels()[baseZoomInterval]));
 	}
 	
-	private int getYCoordinateFromId(int id) {
-		// TODO
-		System.err.println("Error: getYCoordinateFromId not implemented yet");
-		
-		return -1;
+	private int getYCoordinateFromId(int id, byte baseZoomInterval) {
+		return (int) (id / Math.pow(2, this.mapFileMetaData.getBaseZoomLevels()[baseZoomInterval]));
+
 	}
 
 	/**
