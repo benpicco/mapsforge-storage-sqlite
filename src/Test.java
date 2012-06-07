@@ -29,8 +29,10 @@ public class Test {
 		
 		final byte bzi  = (byte) (tpm.getMetaData().getBaseZoomLevels().length - 1);
 		final byte bzl = tpm.getMetaData().getBaseZoomLevels()[bzi];
-		final int sizeX = (int) MercatorProjection.longitudeToTileX(tpm.getMetaData().getMaxLon() / GeoCoordinate.FACTOR_DOUBLE_TO_INT, bzl);
-		final int sizeY = (int) MercatorProjection.latitudeToTileY(tpm.getMetaData().getMinLat() / GeoCoordinate.FACTOR_DOUBLE_TO_INT, bzl);
+		
+		// We have to add one as only the tiles added are counted to avoid off-by one
+		final int sizeX = 1 + (int) MercatorProjection.longitudeToTileX(tpm.getMetaData().getMaxLon() / GeoCoordinate.FACTOR_DOUBLE_TO_INT, bzl);
+		final int sizeY = 1 + (int) MercatorProjection.latitudeToTileY(tpm.getMetaData().getMinLat() / GeoCoordinate.FACTOR_DOUBLE_TO_INT, bzl);
 		
 		System.out.println("Map Dimensions: ("+
 				MercatorProjection.longitudeToTileX(tpm.getMetaData().getMinLon() / GeoCoordinate.FACTOR_DOUBLE_TO_INT, bzl)
@@ -108,11 +110,13 @@ public class Test {
 						data = "This tile has changed as well!".getBytes();
 					if (changeTile && x == 100 && y == 48)
 						data = "You did find me!".getBytes();
+					if (changeTile && x == 127 && y == 127)
+						data = "This is the last Tile!".getBytes();
 					
 					tdcll.add(new TileDataContainer(data, TileDataContainer.TILE_TYPE_VECTOR, x, y, zoomInterval));
 				}
 			}
-			
+						
 			tpm.insertOrUpdateTiles(tdcll);
 			System.out.println("Written "+tdcll.size()+" tiles.");
 			tdcll.clear();
